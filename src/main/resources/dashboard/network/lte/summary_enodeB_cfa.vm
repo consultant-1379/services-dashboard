@@ -1,0 +1,39 @@
+##=============================================================================
+##
+## enodeB summary query returning the top X worst performing enodeB's (ranked on NO_OF_ERRORS)
+## and the total number of impacted subscribers.
+## This is used to populate the "Top X Impacted enodeB's for LTE Call Failure" (for LTE Network) dashboard widget.
+##
+##=============================================================================
+select 
+	top 5
+	rank() over (order by Failures DESC) as Rank,
+	topology.HIER3_ID,
+	topology.HIERARCHY_3,
+	enodeB_cfa.Failures
+from
+	(
+		select 
+			HIER3_ID,
+			SUM(NO_OF_ERRORS) as Failures
+        from 
+			EVENT_E_LTE_CFA_HIER3_ERR_DAY aggView
+		where
+			#GET_DATETIME_RANGE()
+        group by
+			HIER3_ID
+	) as enodeB_cfa
+left outer join
+	(
+	select 
+		HIERARCHY_3,
+		HIER3_ID
+	from 
+		DIM_E_LTE_HIER321
+	group by
+		HIERARCHY_3,
+		HIER3_ID
+	) as topology
+on (
+	topology.HIER3_ID = enodeB_cfa.HIER3_ID
+	)	 

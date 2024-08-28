@@ -1,0 +1,31 @@
+##=============================================================================
+##
+## Terminal summary query returning the top X worst performing Terminals's (ranked on NO_OF_ERRORS)
+## and the total number of impacted subscribers.
+## This is used to populate the "Top X Impacted Terminal's for LTE Call Failure" (for LTE Network) dashboard widget.
+##
+##=============================================================================
+select 
+	top 5
+	rank() over (order by Failures DESC) as Rank,
+	topology.VENDOR_NAME as Manufacturer,
+	topology.MARKETING_NAME as Model,
+	terminal_cfa.TAC,
+	terminal_cfa.Failures
+from
+	(
+		select 
+			TAC,
+			SUM(NO_OF_ERRORS) as Failures
+        from 
+			EVENT_E_LTE_CFA_TAC_ERR_DAY aggView
+		where
+			#GET_DATETIME_RANGE()
+        group by
+			TAC
+	) as terminal_cfa
+left outer join
+	dc.DIM_E_SGEH_TAC topology
+on (
+	topology.TAC = terminal_cfa.TAC
+	)	 

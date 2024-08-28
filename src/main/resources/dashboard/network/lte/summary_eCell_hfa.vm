@@ -1,0 +1,57 @@
+##=============================================================================
+##
+## eCell summary query returning the top X worst performing eCell's (ranked on NO_OF_ERRORS)
+## and the total number of impacted subscribers.
+## This is used to populate the "Top X Impacted eCell's for LTE Handover Failure" (for LTE Network) dashboard widget.
+##
+##=============================================================================
+select 
+	top 5
+	rank() over (order by Failures DESC) as Rank,
+	topology.HIER321_ID,
+	topology.HIERARCHY_1+',,'+topology.HIERARCHY_3+','+topology.VENDOR+','+ratTable.RAT_DESC,
+	eCell_hfa.Failures
+from
+	(
+		select 
+			HIER321_ID,
+			SUM(NO_OF_ERRORS) as Failures
+        from 
+			EVENT_E_LTE_HFA_HIER321_ERR_DAY aggView
+		where
+			#GET_DATETIME_RANGE()
+        group by
+			HIER321_ID
+	) as eCell_hfa
+left outer join
+	(
+	select 
+		HIERARCHY_1,
+		HIER321_ID,
+		HIERARCHY_3,
+		VENDOR,
+		RAT
+	from 
+		DIM_E_LTE_HIER321
+	group by
+		HIERARCHY_1,
+		HIER321_ID,
+		HIERARCHY_3,
+		VENDOR,
+		RAT
+	) as topology
+on (
+	topology.HIER321_ID = eCell_hfa.HIER321_ID
+	)
+left outer join
+	(
+	select
+		RAT,
+		RAT_DESC
+	from
+		DIM_E_SGEH_RAT
+	) as ratTable
+on (
+	topology.RAT = ratTable.RAT
+	)
+	

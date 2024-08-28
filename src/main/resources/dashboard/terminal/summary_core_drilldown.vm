@@ -1,0 +1,24 @@
+##=============================================================================
+##
+## Drilldown from Dashboard "Top 5 Impacted Terminals" for CORE. This returns the
+## Manufacturer, Model, TAC, Failures, Impacted Subscribers, for each TAC which have
+## VENDOR= vendor_name and Model=model
+## This is used to open a drilldown in the Terminal Tab.
+##=============================================================================
+
+select dc.DIM_E_SGEH_TAC.VENDOR_NAME as Manufacturer,
+    dc.DIM_E_SGEH_TAC.MODEL as Model,
+    aggView.TAC,
+    aggView.NO_OF_ERRORS as Failures,
+    aggView.NO_OF_TOTAL_ERR_SUBSCRIBERS as 'Impacted Subscribers'
+
+    from dc.EVENT_E_SGEH_MANUF_TAC_ERR_DAY aggView left outer join dc.DIM_E_SGEH_TAC on (aggView.TAC = dc.DIM_E_SGEH_TAC.TAC)
+    where #GET_DATETIME_RANGE() and dc.DIM_E_SGEH_TAC.VENDOR_NAME = :VENDOR and dc.DIM_E_SGEH_TAC.MODEL = :MARKETINGNAME
+
+    group by dc.DIM_E_SGEH_TAC.VENDOR_NAME,
+    dc.DIM_E_SGEH_TAC.MODEL,
+    aggView.TAC,
+    aggView.NO_OF_ERRORS,
+    aggView.NO_OF_TOTAL_ERR_SUBSCRIBERS
+
+    order by aggView.NO_OF_ERRORS DESC

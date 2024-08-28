@@ -1,0 +1,24 @@
+##=============================================================================
+##
+## Cause code query returning the number of distinct Homers and Roamers.
+## This is used to populate the "Homers & Roamers" dashboard widget.
+##
+##=============================================================================
+
+##Get the top 5 impacted Country...
+select top 5 rank() over (order by Roamers DESC) as RANK, 
+	dc.DIM_E_SGEH_MCCMNC.COUNTRY as Country, 
+	SUM(NO_OF_TOTAL_ERR_ROAMERS) as Roamers into #topFive
+    from dc.EVENT_E_SGEH_MCC_MNC_ROAM_DAY aggView left outer join dc.DIM_E_SGEH_MCCMNC on (dc.DIM_E_SGEH_MCCMNC.MCC = IMSI_MCC) and (dc.DIM_E_SGEH_MCCMNC.MNC = IMSI_MNC) where #GET_DATETIME_RANGE()
+
+    group by aggView.IMSI_MCC, dc.DIM_E_SGEH_MCCMNC.COUNTRY 
+
+##create the end resultset...
+select RANK, Country, Roamers from #topFive
+union
+##Get the total...
+select 6 as RANK, 'Total' as Country, SUM(NO_OF_TOTAL_ERR_ROAMERS) as Roamers from dc.EVENT_E_SGEH_MCC_MNC_ROAM_DAY where #GET_DATETIME_RANGE()
+union
+##Get the previous...
+select 7 as RANK, 'Previous' as Country, SUM(NO_OF_TOTAL_ERR_ROAMERS) as Roamers from dc.EVENT_E_SGEH_MCC_MNC_ROAM_DAY where DATETIME_ID >= '$previousDay' and DATETIME_ID < :dateFrom
+order by 1

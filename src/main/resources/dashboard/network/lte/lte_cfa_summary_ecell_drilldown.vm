@@ -1,0 +1,67 @@
+##
+## LTE Call Failure Dashboard eCell Drilldown Analysis
+##
+## Velocity Parameter:
+##	
+##		$aggregationView the aggregation view to query against	
+##
+##
+## Named PreparedStatement Parameter:
+##
+##     :dateFrom   starting time
+##     :dateTo     ending time#
+
+SELECT
+	:HIER321_ID as HIER321_ID,
+	aggView.CATEGORY_ID AS 'Category ID', 
+	topology.VENDOR AS 'Vendor',
+	topology.HIERARCHY_3 AS 'Controller',
+	topology.HIERARCHY_1 AS 'Access Area',	
+	eventDesc.CATEGORY_ID_DESC as 'Category Type',
+	Failures as 'Failures'
+FROM 	
+	(select 
+		CATEGORY_ID,
+		:HIER321_ID as HIER321_ID,
+		sum(NO_OF_ERRORS)
+	from 
+		dc.EVENT_E_LTE_CFA_HIER321_EVENTID_ERR_DAY as tempAgg
+	where	
+		#GET_DATETIME_RANGE()
+		and tempAgg.HIER321_ID = :HIER321_ID
+	group by
+		CATEGORY_ID
+	) as aggView(CATEGORY_ID, HIER321_ID, Failures)	
+	left outer join (
+		select 
+			HIERARCHY_1,
+			HIERARCHY_3,
+			HIER321_ID,
+			VENDOR
+		from 
+			dc.DIM_E_LTE_HIER321
+		where 
+			HIER321_ID = :HIER321_ID	
+		group by
+        	HIERARCHY_1,
+        	HIERARCHY_3,
+			HIER321_ID,
+			VENDOR
+	) as topology
+	on (
+		topology.HIER321_ID = aggView.HIER321_ID
+		)	
+	inner join
+	(
+		 select 
+			CATEGORY_ID,
+			CATEGORY_ID_DESC
+		from 
+			dc.DIM_E_LTE_CFA_EVENTTYPE
+		group by
+			CATEGORY_ID,
+			CATEGORY_ID_DESC
+	 )	as eventDesc
+	 on(
+			eventDesc.CATEGORY_ID = aggView.CATEGORY_ID
+		)

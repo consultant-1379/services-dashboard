@@ -1,0 +1,18 @@
+##=============================================================================
+##
+## Cause code query returning the top 5 worst performing terminals (ranked on NO_OF_ERRORS) 
+## and the total number of impacted subscribers.
+## This is used to populate the "Top 5 Impacted Terminals" (for CORE Network) dashboard widget.
+##
+##============================================================================= 
+
+select top 5 rank() over (order by Failures DESC) as RANK, 
+    dc.DIM_E_SGEH_TAC.VENDOR_NAME as Manufacturer, 
+    dc.DIM_E_SGEH_TAC.MODEL as Model, 
+    SUM(NO_OF_ERRORS) as Failures, 
+    SUM(NO_OF_TOTAL_ERR_SUBSCRIBERS) as Subscribers 
+
+    from dc.EVENT_E_SGEH_MANUF_TAC_ERR_DAY aggView 
+    left outer join dc.DIM_E_SGEH_TAC on (aggView.TAC = dc.DIM_E_SGEH_TAC.TAC) 
+    where #GET_DATETIME_RANGE()
+    group by dc.DIM_E_SGEH_TAC.VENDOR_NAME, dc.DIM_E_SGEH_TAC.MODEL

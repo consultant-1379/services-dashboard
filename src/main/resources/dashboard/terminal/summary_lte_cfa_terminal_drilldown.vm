@@ -1,0 +1,49 @@
+ ##
+## LTE Call Failure Dashboard Terminal Drilldown Analysis
+##
+## Velocity Parameter:
+##	
+##		$aggregationView the aggregation view to query against	
+##
+##
+## Named PreparedStatement Parameter:
+##
+##     :dateFrom   starting time
+##     :dateTo     ending time#
+	
+select 
+	aggView.CATEGORY_ID,
+	aggView.TAC,
+	:VENDOR as Manufacturer,
+    :MARKETINGNAME as Model,
+    eventDesc.CATEGORY_ID_DESC as 'Category Type',
+    aggView.Failures as Failures
+from 
+	( 
+		select
+			TAC,
+			CATEGORY_ID,
+			SUM(NO_OF_ERRORS) as Failures 
+		from
+			dc.EVENT_E_LTE_CFA_TAC_EVENTID_ERR_DAY aggView 
+		where
+			TAC = :TAC
+			and #GET_DATETIME_RANGE()
+		group by
+			TAC,
+			CATEGORY_ID
+	) as aggView
+	inner join	
+	(
+		 select 
+			CATEGORY_ID,
+			CATEGORY_ID_DESC
+		from 
+			dc.DIM_E_LTE_CFA_EVENTTYPE
+		group by
+			CATEGORY_ID,
+			CATEGORY_ID_DESC
+	)	as eventDesc
+	on(
+		eventDesc.CATEGORY_ID = aggView.CATEGORY_ID
+	)

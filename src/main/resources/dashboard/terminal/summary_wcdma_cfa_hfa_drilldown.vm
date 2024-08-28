@@ -1,0 +1,68 @@
+##=============================================================================
+##
+## Cause code query returning the top 5 worst performing terminals (ranked on NO_OF_ERRORS)
+## and the total number of impacted subscribers.
+## This is used to populate the "Top 5 Impacted Terminals" (for WCDMA Network) dashboard widget.
+##
+##=============================================================================
+select dc.DIM_E_SGEH_TAC.VENDOR_NAME as Manufacturer,
+    dc.DIM_E_SGEH_TAC.MODEL as Model,
+    'CFA' as 'Failure Type',
+    SUM(NO_OF_ERRORS) as Failures,
+    SUM(NO_OF_TOTAL_ERR_SUBSCRIBERS) as Subscribers
+    from EVENT_E_RAN_CFA_TAC_ERR_DAY aggView left outer join dc.DIM_E_SGEH_TAC on (aggView.TAC = dc.DIM_E_SGEH_TAC.TAC)
+        where #GET_DATETIME_RANGE()
+        and dc.DIM_E_SGEH_TAC.VENDOR_NAME = :VENDOR
+        and dc.DIM_E_SGEH_TAC.MODEL = :MARKETINGNAME
+    group by dc.DIM_E_SGEH_TAC.VENDOR_NAME, dc.DIM_E_SGEH_TAC.MODEL
+
+    union all
+
+    select hfa.Manufacturer, hfa.Model,  'HFA' as 'Failure Type', SUM(hfa.Failures) as Failures, SUM(hfa.Subscribers) as Subscribers from (
+
+    select dc.DIM_E_SGEH_TAC.VENDOR_NAME as Manufacturer,
+        dc.DIM_E_SGEH_TAC.MODEL as Model,
+        SUM(NO_OF_ERRORS) as Failures,
+        SUM(NO_OF_TOTAL_ERR_SUBSCRIBERS) as Subscribers
+        from EVENT_E_RAN_HFA_HSDSCH_TAC_ERR_DAY aggView left outer join dc.DIM_E_SGEH_TAC on (aggView.TAC = dc.DIM_E_SGEH_TAC.TAC)
+            where #GET_DATETIME_RANGE()
+            and dc.DIM_E_SGEH_TAC.VENDOR_NAME = :VENDOR
+            and dc.DIM_E_SGEH_TAC.MODEL = :MARKETINGNAME
+        group by dc.DIM_E_SGEH_TAC.VENDOR_NAME, dc.DIM_E_SGEH_TAC.MODEL
+
+    union all
+
+    select dc.DIM_E_SGEH_TAC.VENDOR_NAME as Manufacturer,
+        dc.DIM_E_SGEH_TAC.MODEL as Model,
+        SUM(NO_OF_ERRORS) as Failures,
+        SUM(NO_OF_TOTAL_ERR_SUBSCRIBERS) as Subscribers
+        from EVENT_E_RAN_HFA_IFHO_TAC_ERR_DAY aggView left outer join dc.DIM_E_SGEH_TAC on (aggView.TAC = dc.DIM_E_SGEH_TAC.TAC)
+            where #GET_DATETIME_RANGE()
+            and dc.DIM_E_SGEH_TAC.VENDOR_NAME = :VENDOR
+            and dc.DIM_E_SGEH_TAC.MODEL = :MARKETINGNAME
+        group by dc.DIM_E_SGEH_TAC.VENDOR_NAME, dc.DIM_E_SGEH_TAC.MODEL
+
+    union all
+
+    select dc.DIM_E_SGEH_TAC.VENDOR_NAME as Manufacturer,
+        dc.DIM_E_SGEH_TAC.MODEL as Model,
+        SUM(NO_OF_ERRORS) as Failures,
+        SUM(NO_OF_TOTAL_ERR_SUBSCRIBERS) as Subscribers
+    from EVENT_E_RAN_HFA_IRAT_TAC_ERR_DAY aggView left outer join dc.DIM_E_SGEH_TAC on (aggView.TAC = dc.DIM_E_SGEH_TAC.TAC)
+        where #GET_DATETIME_RANGE()
+        and dc.DIM_E_SGEH_TAC.VENDOR_NAME = :VENDOR
+        and dc.DIM_E_SGEH_TAC.MODEL = :MARKETINGNAME
+    group by dc.DIM_E_SGEH_TAC.VENDOR_NAME, dc.DIM_E_SGEH_TAC.MODEL
+
+    union all
+
+    select dc.DIM_E_SGEH_TAC.VENDOR_NAME as Manufacturer,
+        dc.DIM_E_SGEH_TAC.MODEL as Model,
+        SUM(NO_OF_ERRORS) as Failures,
+        SUM(NO_OF_TOTAL_ERR_SUBSCRIBERS) as Subscribers
+    from EVENT_E_RAN_HFA_SOHO_TAC_ERR_DAY aggView left outer join dc.DIM_E_SGEH_TAC on (aggView.TAC = dc.DIM_E_SGEH_TAC.TAC)
+        where #GET_DATETIME_RANGE()
+        and dc.DIM_E_SGEH_TAC.VENDOR_NAME = :VENDOR
+        and dc.DIM_E_SGEH_TAC.MODEL = :MARKETINGNAME
+    group by dc.DIM_E_SGEH_TAC.VENDOR_NAME, dc.DIM_E_SGEH_TAC.MODEL)hfa
+group by  hfa.Manufacturer, hfa.Model
